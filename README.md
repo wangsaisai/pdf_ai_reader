@@ -29,7 +29,7 @@ All configuration is via environment variables. Copy `.env.example` to `.env` an
 | `LLM_PROVIDER` | `google` | LLM provider: `google`, `openai`, `anthropic`, `ollama` |
 | `EMBEDDING_PROVIDER` | `google` | Embedding provider: `google`, `openai`, `ollama` |
 | `LLM_MODEL` | `gemini-2.0-flash-exp` | Model name for the selected LLM provider |
-| `EMBEDDING_MODEL` | `models/embedding-001` | Model name for the selected embedding provider |
+| `EMBEDDING_MODEL` | `models/text-embedding-004` | Model name for the selected embedding provider |
 | `LLM_TEMPERATURE` | `0.3` | LLM temperature (0.0 - 1.0) |
 | `OLLAMA_BASE_URL` | `http://localhost:11434` | Ollama server URL (only for ollama provider) |
 | `OPENAI_BASE_URL` | *(empty)* | Custom base URL for OpenAI-compatible providers |

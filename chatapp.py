@@ -2,6 +2,15 @@ import streamlit as st
 from PyPDF2 import PdfReader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 import os
+import logging
+
+logger = logging.getLogger(__name__)
+logger.propagate = False
+if not logger.handlers:
+    handler = logging.StreamHandler()
+    handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
+    logger.addHandler(handler)
+    logger.setLevel(logging.INFO)
 from langchain_community.vectorstores import FAISS
 from langchain.chains.question_answering import load_qa_chain
 from langchain.prompts import PromptTemplate
@@ -12,7 +21,7 @@ load_dotenv()
 LLM_PROVIDER = os.getenv("LLM_PROVIDER", "google")
 EMBEDDING_PROVIDER = os.getenv("EMBEDDING_PROVIDER", "google")
 LLM_MODEL = os.getenv("LLM_MODEL", "gemini-2.0-flash-exp")
-EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "models/embedding-001")
+EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "models/text-embedding-004")
 LLM_TEMPERATURE = float(os.getenv("LLM_TEMPERATURE", "0.3"))
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 OPENAI_BASE_URL = os.getenv("OPENAI_BASE_URL", "")
@@ -152,6 +161,7 @@ def user_input(user_question):
 
         st.write("Reply: ", response["output_text"])
     except Exception as e:
+        logger.exception("Error getting answer")
         st.error(f"Error getting answer: {e}")
 
 
@@ -186,6 +196,7 @@ def main():
                             st.session_state.processed = True
                             st.success("Done")
                     except Exception as e:
+                        logger.exception("Error processing PDFs")
                         st.error(f"Error processing PDFs: {e}")
 
         st.write("---")
