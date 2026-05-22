@@ -2,22 +2,68 @@ import streamlit as st
 from PyPDF2 import PdfReader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 import os
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
-import google.generativeai as genai
 from langchain_community.vectorstores import FAISS
-from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.chains.question_answering import load_qa_chain
 from langchain.prompts import PromptTemplate
 from dotenv import load_dotenv
 
 load_dotenv()
 
-API_KEY = os.getenv("GOOGLE_API_KEY")
-if not API_KEY:
-    st.error("GOOGLE_API_KEY not found. Please create a .env file with your API key from https://makersuite.google.com/app/apikey")
-    st.stop()
+LLM_PROVIDER = os.getenv("LLM_PROVIDER", "google")
+EMBEDDING_PROVIDER = os.getenv("EMBEDDING_PROVIDER", "google")
+LLM_MODEL = os.getenv("LLM_MODEL", "gemini-2.0-flash-exp")
+EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "models/embedding-001")
+LLM_TEMPERATURE = float(os.getenv("LLM_TEMPERATURE", "0.3"))
+OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 
-genai.configure(api_key=API_KEY)
+PROVIDER_KEYS = {
+    "google": "GOOGLE_API_KEY",
+    "openai": "OPENAI_API_KEY",
+    "anthropic": "ANTHROPIC_API_KEY",
+}
+
+# Validate required API keys
+for provider, key_name in [(LLM_PROVIDER, "LLM"), (EMBEDDING_PROVIDER, "Embedding")]:
+    if provider in PROVIDER_KEYS:
+        if not os.getenv(PROVIDER_KEYS[provider]):
+            st.error(f"{PROVIDER_KEYS[provider]} not found for {key_name} provider '{provider}'. "
+                     f"Please set it in your .env file.")
+            st.stop()
+
+if LLM_PROVIDER == "google" or EMBEDDING_PROVIDER == "google":
+    import google.generativeai as genai
+    genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+
+
+def create_llm():
+    if LLM_PROVIDER == "google":
+        from langchain_google_genai import ChatGoogleGenerativeAI
+        return ChatGoogleGenerativeAI(model=LLM_MODEL, temperature=LLM_TEMPERATURE)
+    elif LLM_PROVIDER == "openai":
+        from langchain_openai import ChatOpenAI
+        return ChatOpenAI(model=LLM_MODEL, temperature=LLM_TEMPERATURE)
+    elif LLM_PROVIDER == "anthropic":
+        from langchain_anthropic import ChatAnthropic
+        return ChatAnthropic(model=LLM_MODEL, temperature=LLM_TEMPERATURE)
+    elif LLM_PROVIDER == "ollama":
+        from langchain_ollama import ChatOllama
+        return ChatOllama(model=LLM_MODEL, temperature=LLM_TEMPERATURE, base_url=OLLAMA_BASE_URL)
+    else:
+        raise ValueError(f"Unsupported LLM_PROVIDER: {LLM_PROVIDER}. Use: google, openai, anthropic, ollama")
+
+
+def create_embeddings():
+    if EMBEDDING_PROVIDER == "google":
+        from langchain_google_genai import GoogleGenerativeAIEmbeddings
+        return GoogleGenerativeAIEmbeddings(model=EMBEDDING_MODEL)
+    elif EMBEDDING_PROVIDER == "openai":
+        from langchain_openai import OpenAIEmbeddings
+        return OpenAIEmbeddings(model=EMBEDDING_MODEL)
+    elif EMBEDDING_PROVIDER == "ollama":
+        from langchain_ollama import OllamaEmbeddings
+        return OllamaEmbeddings(model=EMBEDDING_MODEL, base_url=OLLAMA_BASE_URL)
+    else:
+        raise ValueError(f"Unsupported EMBEDDING_PROVIDER: {EMBEDDING_PROVIDER}. Use: google, openai, ollama")
 
 
 def get_pdf_text(pdf_docs):
@@ -45,7 +91,7 @@ def get_vector_store(text_chunks):
 
 def get_embeddings():
     if "embeddings" not in st.session_state:
-        st.session_state.embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
+        st.session_state.embeddings = create_embeddings()
     return st.session_state.embeddings
 
 
@@ -59,7 +105,7 @@ def get_conversational_chain():
     Answer:
     """
 
-    model = ChatGoogleGenerativeAI(model="gemini-2.0-flash-exp", temperature=0.3)
+    model = create_llm()
 
     prompt = PromptTemplate(template=prompt_template, input_variables=["context", "question"])
     chain = load_qa_chain(model, chain_type="stuff", prompt=prompt)
