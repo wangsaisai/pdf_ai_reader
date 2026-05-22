@@ -22,15 +22,15 @@ No tests, linting, or CI/CD are configured.
 RAG pipeline with this data flow:
 
 1. **PDF upload** (Streamlit sidebar) → `get_pdf_text()` extracts text via PyPDF2
-2. **Chunking** → `get_text_chunks()` uses `RecursiveCharacterTextSplitter` (chunk_size=50000, overlap=1000)
+2. **Chunking** → `get_text_chunks()` uses `RecursiveCharacterTextSplitter` (chunk_size=1500, overlap=200), attaches page metadata (source filename, page number) to each chunk
 3. **Embedding + indexing** → `get_vector_store()` → `create_embeddings()` factory creates provider-specific embeddings, FAISS index saved to `faiss_index/`
-4. **Question answering** → `user_input()` loads FAISS index, runs `similarity_search()`, then passes results to a LangChain "stuff" QA chain via `create_llm()` factory
+4. **Question answering** → `user_input()` loads FAISS index, runs `similarity_search(k=4)`, then passes results to a LangChain "stuff" QA chain via `create_llm()` factory. Prompt instructs the LLM to cite source document and page number from chunk metadata.
 
 All functions are defined at module level in `chatapp.py` — there are no classes, no separate modules, and no package structure.
 
 ## Key Files
 
-- **`chatapp.py`** — Sole application file. Uses `langchain_community.vectorstores.FAISS`, `allow_dangerous_deserialization=True` on load. Session state gates question input until PDFs are processed. Provider-specific LLM/embedding classes loaded via `create_llm()` and `create_embeddings()` factories with lazy imports. Validates API keys at startup based on selected providers.
+- **`chatapp.py`** — Sole application file. Uses `langchain_community.vectorstores.FAISS`, `allow_dangerous_deserialization=True` on load. Session state gates question input until PDFs are processed. Provider-specific LLM/embedding classes loaded via `create_llm()` and `create_embeddings()` factories with lazy imports. Validates API keys at startup based on selected providers. QA chain cached in `st.session_state.chain` to avoid re-creation per query.
 - **`faiss_index/`** — Pre-built FAISS vector store (index.faiss + index.pkl). Overwritten when new PDFs are processed.
 - **`docs/`** — Sample PDFs for testing.
 - **`img/`** — UI images and README screenshots.

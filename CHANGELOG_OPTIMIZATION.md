@@ -30,7 +30,7 @@
 
 ---
 
-## Round 3: RAG Pipeline Optimization (current)
+## Round 3: RAG Pipeline Optimization
 
 ### 3.1 Document Chunking — `chunk_size` 50000 → 1500
 
@@ -70,3 +70,43 @@
 **Problem:** `similarity_search()` used the default `k=4` without documentation. With the old 50K chunks, that meant ~200K characters of context.
 
 **Fix:** Explicit `k=4` parameter. Now with 1500-char chunks, that's ~6K characters — well within model context limits.
+
+---
+
+## Round 4: Project Hygiene & Prompt Quality
+
+### 4.1 Prompt Template — Source Citation
+
+**Problem:** Prompt didn't instruct the LLM to cite source documents or page numbers, even though chunk metadata (source filename, page) was available. Users had no way to verify where an answer came from.
+
+**Fix:** Added instruction: "When possible, cite the source document and page number for each piece of information."
+
+### 4.2 QA Chain Caching
+
+**Problem:** `get_conversational_chain()` created a new PromptTemplate and QA chain on every question call. LLM was cached but the chain itself was not.
+
+**Fix:** Cache the entire chain in `st.session_state.chain`. Removed the intermediate `get_llm()` function.
+
+### 4.3 README.md Rewrite
+
+**Problem:** README was inherited from the original project template. Referenced `app.py` (renamed to `chatapp.py`), only mentioned Google Gemini, listed incorrect features (TXT support, Sliding Window Chunking), and linked to the original author's Streamlit Cloud deployment.
+
+**Fix:** Complete rewrite with current architecture, multi-provider configuration table, accurate project structure, and correct setup instructions.
+
+### 4.4 CLAUDE.md — Updated Chunk Parameters
+
+**Problem:** CLAUDE.md still documented `chunk_size=50000, overlap=1000` after the Round 3 change.
+
+**Fix:** Updated to reflect `chunk_size=1500, overlap=200` and added page metadata and `k=4` documentation.
+
+### 4.5 .gitignore — Missing Entries
+
+**Problem:** Only had `.env`, `faiss_index/`, `__pycache__/`, `*.pyc`. Missing common entries.
+
+**Fix:** Added `.venv/`, `venv/`, `.DS_Store`, `.streamlit/`, `*.egg-info`.
+
+### 4.6 faiss_index/ Removed from Git
+
+**Problem:** `faiss_index/` (generated vector store) was tracked in git. It gets overwritten every time a user processes PDFs, so it shouldn't be committed.
+
+**Fix:** `git rm -r --cached faiss_index/` and added to `.gitignore` (already present).

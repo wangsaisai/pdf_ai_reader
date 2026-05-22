@@ -105,27 +105,24 @@ def get_embeddings():
 
 
 def get_conversational_chain():
-    prompt_template = """
-    Answer the question as detailed as possible from the provided context, make sure to provide all the details, if the answer is not in
-    provided context just say, "answer is not available in the context", don't provide the wrong answer\n\n
-    Context:\n {context}\n
-    Question: \n{question}\n
+    if "chain" not in st.session_state:
+        prompt_template = """
+        Answer the question as detailed as possible from the provided context.
+        If the answer is not in the provided context, just say "answer is not available in the context", don't provide the wrong answer.
+        When possible, cite the source document and page number for each piece of information.
 
-    Answer:
-    """
+        Context:\n {context}\n
+        Question: \n{question}\n
 
-    model = get_llm()
+        Answer:
+        """
 
-    prompt = PromptTemplate(template=prompt_template, input_variables=["context", "question"])
-    chain = load_qa_chain(model, chain_type="stuff", prompt=prompt)
+        model = create_llm()
 
-    return chain
+        prompt = PromptTemplate(template=prompt_template, input_variables=["context", "question"])
+        st.session_state.chain = load_qa_chain(model, chain_type="stuff", prompt=prompt)
 
-
-def get_llm():
-    if "llm" not in st.session_state:
-        st.session_state.llm = create_llm()
-    return st.session_state.llm
+    return st.session_state.chain
 
 
 def user_input(user_question):
