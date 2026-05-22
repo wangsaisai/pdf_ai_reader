@@ -32,6 +32,8 @@ All configuration is via environment variables. Copy `.env.example` to `.env` an
 | `EMBEDDING_MODEL` | `models/embedding-001` | Model name for the selected embedding provider |
 | `LLM_TEMPERATURE` | `0.3` | LLM temperature (0.0 - 1.0) |
 | `OLLAMA_BASE_URL` | `http://localhost:11434` | Ollama server URL (only for ollama provider) |
+| `OPENAI_BASE_URL` | *(empty)* | Custom base URL for OpenAI-compatible providers |
+| `ANTHROPIC_BASE_URL` | *(empty)* | Custom base URL for Anthropic-compatible providers |
 
 ### API Keys
 

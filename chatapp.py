@@ -15,6 +15,8 @@ LLM_MODEL = os.getenv("LLM_MODEL", "gemini-2.0-flash-exp")
 EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "models/embedding-001")
 LLM_TEMPERATURE = float(os.getenv("LLM_TEMPERATURE", "0.3"))
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+OPENAI_BASE_URL = os.getenv("OPENAI_BASE_URL", "")
+ANTHROPIC_BASE_URL = os.getenv("ANTHROPIC_BASE_URL", "")
 
 PROVIDER_KEYS = {
     "google": "GOOGLE_API_KEY",
@@ -30,6 +32,7 @@ for provider, key_name in [(LLM_PROVIDER, "LLM"), (EMBEDDING_PROVIDER, "Embeddin
                      f"Please set it in your .env file.")
             st.stop()
 
+# Google SDK requires explicit init; OpenAI/Anthropic read API key from env automatically
 if LLM_PROVIDER == "google" or EMBEDDING_PROVIDER == "google":
     import google.generativeai as genai
     genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
@@ -41,10 +44,16 @@ def create_llm():
         return ChatGoogleGenerativeAI(model=LLM_MODEL, temperature=LLM_TEMPERATURE)
     elif LLM_PROVIDER == "openai":
         from langchain_openai import ChatOpenAI
-        return ChatOpenAI(model=LLM_MODEL, temperature=LLM_TEMPERATURE)
+        kwargs = {"model": LLM_MODEL, "temperature": LLM_TEMPERATURE}
+        if OPENAI_BASE_URL:
+            kwargs["base_url"] = OPENAI_BASE_URL
+        return ChatOpenAI(**kwargs)
     elif LLM_PROVIDER == "anthropic":
         from langchain_anthropic import ChatAnthropic
-        return ChatAnthropic(model=LLM_MODEL, temperature=LLM_TEMPERATURE)
+        kwargs = {"model": LLM_MODEL, "temperature": LLM_TEMPERATURE}
+        if ANTHROPIC_BASE_URL:
+            kwargs["base_url"] = ANTHROPIC_BASE_URL
+        return ChatAnthropic(**kwargs)
     elif LLM_PROVIDER == "ollama":
         from langchain_ollama import ChatOllama
         return ChatOllama(model=LLM_MODEL, temperature=LLM_TEMPERATURE, base_url=OLLAMA_BASE_URL)
@@ -58,7 +67,10 @@ def create_embeddings():
         return GoogleGenerativeAIEmbeddings(model=EMBEDDING_MODEL)
     elif EMBEDDING_PROVIDER == "openai":
         from langchain_openai import OpenAIEmbeddings
-        return OpenAIEmbeddings(model=EMBEDDING_MODEL)
+        kwargs = {"model": EMBEDDING_MODEL}
+        if OPENAI_BASE_URL:
+            kwargs["base_url"] = OPENAI_BASE_URL
+        return OpenAIEmbeddings(**kwargs)
     elif EMBEDDING_PROVIDER == "ollama":
         from langchain_ollama import OllamaEmbeddings
         return OllamaEmbeddings(model=EMBEDDING_MODEL, base_url=OLLAMA_BASE_URL)

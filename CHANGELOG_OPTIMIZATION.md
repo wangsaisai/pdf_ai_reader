@@ -110,3 +110,24 @@
 **Problem:** `faiss_index/` (generated vector store) was tracked in git. It gets overwritten every time a user processes PDFs, so it shouldn't be committed.
 
 **Fix:** `git rm -r --cached faiss_index/` and added to `.gitignore` (already present).
+
+### 4.7 Google SDK Init Comment
+
+Added comment explaining why only Google needs `genai.configure()` — OpenAI/Anthropic SDKs read API keys from environment variables automatically.
+
+---
+
+## Round 5: Custom Base URL Support
+
+### 5.1 OpenAI & Anthropic Custom Base URL
+
+**Problem:** Users in China or behind proxies need to use domestic LLM providers (DeepSeek, Moonshot, etc.) that expose OpenAI/Anthropic-compatible APIs at different base URLs. No way to configure custom endpoints.
+
+**Fix:**
+- Added `OPENAI_BASE_URL` env var — applies to both `ChatOpenAI` and `OpenAIEmbeddings`
+- Added `ANTHROPIC_BASE_URL` env var — applies to `ChatAnthropic`
+- When empty (default), uses provider's official endpoint
+- Ollama already had `OLLAMA_BASE_URL` — no change needed
+- Google SDK does not support custom base URL in the standard SDK — documented in `.env.example`
+
+Updated files: `chatapp.py`, `.env.example`, `README.md`
